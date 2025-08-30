@@ -1,0 +1,16 @@
+{
+  "name": "classigo-benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark suite for classigo vs classnames vs clsx",
+  "main": "index.js",
+  "scripts": {
+    "bench": "node index.js"
+  },
+  "dependencies": {
+    "classnames": "^2.5.1",
+    "clsx": "^2.1.1"
+  },
+  "devDependencies": {
+    "benchmark": "^2.1.4"
+  }
+}
