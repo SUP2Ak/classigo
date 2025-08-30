@@ -1,0 +1,70 @@
+{
+  "name": "classigo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Ultra-optimized class name utility for CSS Modules. 52M ops/sec performance, TypeScript support, standalone.",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly --outDir dist && node scripts/generate-cjs-types.js",
+    "build:prod": "node scripts/clean-dist.js && vite build --config vite.config.prod.js && tsc --emitDeclarationOnly --outDir dist",
+    "build:dev": "vite build && tsc --emitDeclarationOnly --outDir dist && node scripts/generate-cjs-types.js",
+    "prepublishOnly": "pnpm run build:prod",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "bench": "node bench/index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "classigo",
+    "classnames",
+    "clsx",
+    "css-classes",
+    "css-modules",
+    "scss-modules",
+    "utility",
+    "performance",
+    "typescript",
+    "react",
+    "vue",
+    "svelte",
+    "standalone",
+    "ultra-fast",
+    "optimized",
+    "bundle-size",
+    "lightweight"
+  ],
+  "author": "SUP2Ak",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@eslint/js": "^9.34.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "bun-types": "latest",
+    "eslint": "^9.34.0",
+    "typescript": "^5.0.0",
+    "vite": "^7.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SUP2Ak/classigo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SUP2Ak/classigo/issues"
+  },
+  "homepage": "https://github.com/SUP2Ak/classigo#readme"
+}

@@ -1,0 +1,48 @@
+# Source files
+src/
+scripts/
+bench/
+
+# Development files
+vite.config.js
+vite.config.prod.js
+tsconfig.json
+eslint.config.js
+.gitignore
+
+# Documentation
+docs/
+README.fr.md
+
+# Development dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Test files
+test/
+tests/
+*.test.*
+*.spec.*
+
+# Build artifacts (keep only dist/)
+*.tsbuildinfo
