@@ -58,7 +58,7 @@ jobs:
       run: |
         VERSION="${{ steps.version.outputs.version }}"
         
-        # Mettre à jour la version dans package.json
+        # Update version in package.json
         node -e "
           const pkg = require('./package.json');
           pkg.version = '$VERSION';
@@ -66,27 +66,27 @@ jobs:
         "
         echo "Updated package.json to version $VERSION"
         
-        # Vérifier que la mise à jour a fonctionné
+        # Verify the update worked
         UPDATED_VERSION=$(node -p "require('./package.json').version")
         if [ "$UPDATED_VERSION" != "$VERSION" ]; then
-          echo "❌ Erreur: La version n'a pas été mise à jour correctement"
-          echo "Attendu: $VERSION, Obtenu: $UPDATED_VERSION"
+          echo "❌ Error: Version was not updated correctly"
+          echo "Expected: $VERSION, Got: $UPDATED_VERSION"
           exit 1
         fi
-        echo "✅ Version mise à jour avec succès: $UPDATED_VERSION"
+        echo "✅ Version updated successfully: $UPDATED_VERSION"
     
     - name: Build project
       run: |
         pnpm run build:prod
         
-        # Vérifier que les fichiers de build existent
+        # Check if build files exist
         if [ ! -f "./dist/index.mjs" ] || [ ! -f "./dist/index.cjs" ] || [ ! -f "./dist/index.d.ts" ]; then
-          echo "❌ Erreur: Les fichiers de build n'ont pas été créés"
-          echo "Contenu du dossier dist:"
-          ls -la ./dist/ || echo "Dossier dist n'existe pas"
+          echo "❌ Error: Build files were not created"
+          echo "Dist folder content:"
+          ls -la ./dist/ || echo "Dist folder does not exist"
           exit 1
         fi
-        echo "✅ Build réussi, fichiers créés:"
+        echo "✅ Build successful, files created:"
         ls -la ./dist/
     
     - name: Run tests
@@ -94,49 +94,71 @@ jobs:
         pnpm run test:run
         
         if [ $? -ne 0 ]; then
-          echo "❌ Erreur: Les tests ont échoué"
+          echo "❌ Error: Tests failed"
           exit 1
         fi
-        echo "✅ Tests réussis"
-    
-    - name: Commit and push package.json update
-      run: |
-        VERSION="${{ steps.version.outputs.version }}"
-        
-        # Configuration Git
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        
-        # Ajouter et commiter les changements
-        git add package.json
-        git commit -m "Bump version to $VERSION [skip ci]"
-        
-        # Push vers main
-        git push origin main || {
-          echo "❌ Erreur lors du push vers main"
-          exit 1
-        }
-        
-        echo "✅ package.json mis à jour et poussé vers main"
+        echo "✅ Tests passed"
     
     - name: Publish to npm
       run: |
-        echo "📦 Publication sur npm..."
+        echo "📦 Publishing to npm..."
         
-        # Vérifier si on est connecté à npm
+        # Check if connected to npm
         npm whoami || {
-          echo "❌ Erreur: Non connecté à npm"
-          echo "Veuillez configurer NPM_TOKEN dans les secrets GitHub"
+          echo "❌ Error: Not connected to npm"
+          echo "Please configure NPM_TOKEN in GitHub secrets"
           exit 1
         }
         
-        # Publier le package
+        # Publish package
         npm publish --access public || {
-          echo "❌ Erreur lors de la publication npm"
+          echo "❌ Error publishing to npm"
           exit 1
         }
         
-        echo "✅ Publication npm réussie"
+        echo "✅ npm publication successful"
+    
+    - name: Update main branch with new version
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        
+        # Git configuration
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Checkout main branch
+        git checkout main || {
+          echo "❌ Error: Could not checkout main branch"
+          exit 1
+        }
+        
+        # Pull latest changes
+        git pull origin main || {
+          echo "❌ Error: Could not pull latest changes"
+          exit 1
+        }
+        
+        # Update package.json version
+        node -e "
+          const pkg = require('./package.json');
+          pkg.version = '$VERSION';
+          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+        "
+        
+        # Add and commit changes
+        git add package.json
+        git commit -m "Bump version to $VERSION [skip ci]" || {
+          echo "❌ Error: Could not commit changes"
+          exit 1
+        }
+        
+        # Push to main
+        git push origin main || {
+          echo "❌ Error: Could not push to main"
+          exit 1
+        }
+        
+        echo "✅ package.json updated on main branch"
     
     - name: Success message
       run: |
