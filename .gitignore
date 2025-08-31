@@ -14,6 +14,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# GitHub Pages build directory
+gh-pages/
+
 # Environment variables
 .env
 .env.local

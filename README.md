@@ -4,6 +4,9 @@
 
 [![npm version](https://badge.fury.io/js/classigo.svg)](https://badge.fury.io/js/classigo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/SUP2Ak/classigo/workflows/CI/badge.svg)](https://github.com/SUP2Ak/classigo/actions)
+[![Coverage](https://codecov.io/gh/SUP2Ak/classigo/branch/main/graph/badge.svg)](https://codecov.io/gh/SUP2Ak/classigo)
+[![Bundle Size](https://img.shields.io/bundlephobia/min/classigo)](https://bundlephobia.com/package/classigo)
 
 ## 🚀 Features
 
@@ -95,6 +98,14 @@ const className = classigo(
 *Benchmarks run with 1M iterations × 20 rounds*
 
 For more information, see [docs/README.md](./docs/README.md).
+
+## 🎮 Live Examples
+
+- **[All Examples](https://sup2ak.github.io/classigo/examples/)** - Interactive demos showcase
+- **[React Demo](https://sup2ak.github.io/classigo/examples/react-demo/)** - Interactive button component with CSS Modules
+- **[Vanilla JS Demo](https://sup2ak.github.io/classigo/examples/vanilla-demo/)** - Pure JavaScript implementation
+
+*Examples show real-time className generation and performance comparisons*
 
 ## 🤝 Contributing
 
