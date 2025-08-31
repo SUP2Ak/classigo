@@ -66,14 +66,14 @@ jobs:
     
     - name: Setup gh-pages
       run: |
-        # Create gh-pages directory
-        mkdir -p gh-pages
+        # Create temp directory for gh-pages content
+        mkdir -p temp-gh-pages
         
-        # Copy built examples to gh-pages
-        cp -r examples/dist/* gh-pages/
+        # Copy built examples to temp directory
+        cp -r examples/dist/* temp-gh-pages/
         
         # Copy classigo UMD build for examples
-        cp dist/index.umd.js gh-pages/classigo.umd.js
+        cp dist/index.umd.js temp-gh-pages/classigo.umd.js
     
     - name: Deploy to gh-pages branch
       run: |
@@ -88,13 +88,13 @@ jobs:
           git checkout --orphan gh-pages
         fi
         
-        # Remove all files except gh-pages
+        # Remove all files
         git rm -rf . || true
         git clean -fxd
         
-        # Copy gh-pages content to root
-        cp -r gh-pages/* . || true
-        rm -rf gh-pages/
+        # Copy temp content to root
+        cp -r temp-gh-pages/* . || true
+        rm -rf temp-gh-pages/
         
         # Add all files
         git add .
