@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -51,9 +51,6 @@ jobs:
     
     - name: Run benchmarks
       run: pnpm run bench
-    
-    - name: Build production
-      run: pnpm run build:prod
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
