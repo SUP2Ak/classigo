@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       classigo:
-        specifier: file:../
-        version: file:..
+        specifier: file:../dist
+        version: dist@file:../dist
       react:
         specifier: ^19.1.1
         version: 19.1.1
@@ -568,9 +568,6 @@ packages:
   caniuse-lite@1.0.30001739:
     resolution: {integrity: sha512-y+j60d6ulelrNSwpPyrHdl+9mJnQzHBr08xm48Qno0nSk4h3Qojh+ziv2qE6rXf4k3tadF4o1J/1tAbVm1NtnA==}
 
-  classigo@file:..:
-    resolution: {directory: .., type: directory}
-
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -607,6 +604,9 @@ packages:
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
+
+  dist@file:../dist:
+    resolution: {directory: ../dist, type: directory}
 
   electron-to-chromium@1.5.211:
     resolution: {integrity: sha512-IGBvimJkotaLzFnwIVgW9/UD/AOJ2tByUmeOrtqBfACSbAw5b1G0XpvdaieKyc7ULmbwXVx+4e4Be8pOPBrYkw==}
@@ -1454,8 +1454,6 @@ snapshots:
 
   caniuse-lite@1.0.30001739: {}
 
-  classigo@file:..: {}
-
   clsx@2.1.1: {}
 
   commander@13.1.0: {}
@@ -1477,6 +1475,8 @@ snapshots:
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
+
+  dist@file:../dist: {}
 
   electron-to-chromium@1.5.211: {}
 
