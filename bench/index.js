@@ -1,3 +1,5 @@
+/* global require, console, __dirname */
+
 const { performance } = require("perf_hooks");
 const fs = require("fs");
 const path = require("path");
@@ -16,6 +18,7 @@ function getFileSize(filePath) {
     const stats = fs.statSync(filePath);
     return stats.size;
   } catch (error) {
+    console.error("Error getting file size:", error);
     return null;
   }
 }
