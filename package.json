@@ -1,6 +1,6 @@
 {
   "name": "classigo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Ultra-optimized class name utility for CSS Modules. 52M ops/sec performance, TypeScript support, standalone.",
   "main": "dist/index.cjs",
