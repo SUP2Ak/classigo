@@ -1,0 +1,80 @@
+name: Update gh-pages Branch
+
+on:
+  workflow_run:
+    workflows: ["Deploy to GitHub Pages"]
+    types:
+      - completed
+
+jobs:
+  update-gh-pages:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+    
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+    
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Build production
+      run: pnpm run build:prod
+    
+    - name: Install examples dependencies
+      run: cd examples && pnpm install --frozen-lockfile
+    
+    - name: Build examples
+      run: pnpm run examples:build
+    
+    - name: Copy classigo UMD build
+      run: cp dist/index.umd.js examples/dist/classigo.umd.js
+    
+    - name: Deploy to gh-pages branch
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Checkout gh-pages branch
+        git checkout gh-pages
+        git pull origin gh-pages
+        
+        # Remove all files
+        git rm -rf . || true
+        git clean -fxd
+        
+        # Copy built examples to root
+        cp -r examples/dist/* . || true
+        
+        # Add all files
+        git add .
+        
+        # Commit and push
+        git commit -m "feat: update gh-pages branch from GitHub Actions"
+        git push origin gh-pages
+        echo "✅ Updated gh-pages branch"
