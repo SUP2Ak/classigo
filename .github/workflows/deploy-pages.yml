@@ -17,9 +17,6 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - uses: actions/checkout@v4
@@ -67,19 +64,51 @@ jobs:
     - name: Build examples
       run: pnpm run examples:build
     
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
+    - name: Setup gh-pages
+      run: |
+        # Create temp directory for gh-pages content
+        mkdir -p temp-gh-pages
+        
+        # Copy built examples to temp directory
+        cp -r examples/dist/* temp-gh-pages/
+        
+        # Copy classigo UMD build for examples
+        cp dist/index.umd.js temp-gh-pages/classigo.umd.js
     
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './examples/dist'
-    
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+    - name: Deploy to gh-pages branch
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Checkout gh-pages branch or create it
+        if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+          git checkout gh-pages
+          git pull origin gh-pages
+        else
+          git checkout --orphan gh-pages
+        fi
+        
+        # Remove all files except temp-gh-pages
+        git rm -rf . || true
+        git clean -fxd
+        
+        # Copy temp content to root
+        cp -r temp-gh-pages/* . || true
+        rm -rf temp-gh-pages/
+        
+        # Add all files
+        git add .
+        
+        # Commit if there are changes
+        if git diff --staged --quiet; then
+          echo "No changes to deploy"
+        else
+          git commit -m "feat: update GitHub Pages"
+          git push origin gh-pages
+          echo "✅ Deployed to gh-pages branch"
+        fi
     
     - name: Output deployment URL
       run: |
-        echo "Deployment URL: ${{ steps.deployment.outputs.page_url }}"
-        echo "Examples URL: ${{ steps.deployment.outputs.page_url }}/"
+        echo "Deployment URL: https://sup2ak.github.io/classigo/"
+        echo "Examples URL: https://sup2ak.github.io/classigo/"
