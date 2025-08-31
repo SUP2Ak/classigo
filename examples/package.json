@@ -15,7 +15,7 @@
     "react-dom": "^19.1.1",
     "vue": "^3.5.20",
     "svelte": "^5.38.6",
-    "classigo": "file:../"
+    "classigo": "file:../dist"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.2",
