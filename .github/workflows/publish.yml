@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Type de release'
+        description: 'Release type'
         required: true
         default: 'patch'
         type: choice
@@ -86,11 +86,11 @@ jobs:
             ;;
         esac
         
-        # Vérifier si la version existe déjà
+        # Check if version already exists
         if git tag -l | grep -q "v$NEW_VERSION"; then
-          echo "❌ Erreur: La version v$NEW_VERSION existe déjà"
-          echo "Tags existants:"
-          git tag -l | grep "v$NEW_VERSION" || echo "Aucun tag trouvé"
+          echo "❌ Error: Version v$NEW_VERSION already exists"
+          echo "Existing tags:"
+          git tag -l | grep "v$NEW_VERSION" || echo "No tags found"
           exit 1
         fi
         
@@ -101,14 +101,14 @@ jobs:
       run: |
         pnpm run build:prod
         
-        # Vérifier que les fichiers de build existent
+        # Check if build files exist
         if [ ! -f "./dist/index.mjs" ] || [ ! -f "./dist/index.cjs" ] || [ ! -f "./dist/index.d.ts" ]; then
-          echo "❌ Erreur: Les fichiers de build n'ont pas été créés"
-          echo "Contenu du dossier dist:"
-          ls -la ./dist/ || echo "Dossier dist n'existe pas"
+          echo "❌ Error: Build files were not created"
+          echo "Dist folder content:"
+          ls -la ./dist/ || echo "Dist folder does not exist"
           exit 1
         fi
-        echo "✅ Build réussi, fichiers créés:"
+        echo "✅ Build successful, files created:"
         ls -la ./dist/
     
     - name: Run tests
@@ -116,38 +116,38 @@ jobs:
         pnpm run test:run
         
         if [ $? -ne 0 ]; then
-          echo "❌ Erreur: Les tests ont échoué"
+          echo "❌ Error: Tests failed"
           exit 1
         fi
-        echo "✅ Tests réussis"
+        echo "✅ Tests passed"
     
     - name: Create tag
       run: |
         NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
         
-        # Configuration Git
+        # Git configuration
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Vérifier si le tag existe déjà
+        # Check if tag already exists
         if git tag -l | grep -q "v$NEW_VERSION"; then
-          echo "⚠️  Le tag v$NEW_VERSION existe déjà, suppression..."
+          echo "⚠️  Tag v$NEW_VERSION already exists, removing..."
           git tag -d "v$NEW_VERSION" || true
           git push origin ":refs/tags/v$NEW_VERSION" || true
         fi
         
-        # Créer le tag
+        # Create tag
         git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
         
-        # Push du tag
+        # Push tag
         echo "Pushing tag..."
         git push origin "v$NEW_VERSION" || {
-          echo "❌ Erreur lors du push du tag"
+          echo "❌ Error pushing tag"
           git tag -l
           exit 1
         }
         
-        echo "✅ Tag créé et poussé avec succès"
+        echo "✅ Tag created and pushed successfully"
     
     - name: Generate changelog
       id: changelog
@@ -170,7 +170,7 @@ jobs:
       run: |
         NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
         
-        # Créer la release draft via l'API GitHub
+        # Create release draft via GitHub API
         echo "## 🚀 Release v$NEW_VERSION" > release_body.txt
         echo "" >> release_body.txt
         echo "### 📋 Changelog" >> release_body.txt
@@ -189,31 +189,25 @@ jobs:
         echo 'yarn add classigo' >> release_body.txt
         echo '```' >> release_body.txt
         echo "" >> release_body.txt
-        echo "### 🔧 Utilisation" >> release_body.txt
+        echo "### 🔧 Usage" >> release_body.txt
         echo '```javascript' >> release_body.txt
         echo 'import classigo from "classigo";' >> release_body.txt
         echo '' >> release_body.txt
-        echo '// Utilisation basique' >> release_body.txt
+        echo '// Basic usage' >> release_body.txt
         echo 'const className = classigo("base", "active", "large");' >> release_body.txt
-        echo '// Résultat: "base active large"' >> release_body.txt
+        echo '// Result: "base active large"' >> release_body.txt
         echo '```' >> release_body.txt
         echo "" >> release_body.txt
         echo "### 📝 Notes" >> release_body.txt
         echo "- Version: $NEW_VERSION" >> release_body.txt
-        echo "- Build testé et validé" >> release_body.txt
-        echo "- Tests exécutés avec succès" >> release_body.txt
-        echo "- **Draft release - À valider avant publication**" >> release_body.txt
+        echo "- Build tested and validated" >> release_body.txt
+        echo "- Tests executed successfully" >> release_body.txt
+        echo "- **Draft release - Review before publishing**" >> release_body.txt
         
         RELEASE_BODY=$(cat release_body.txt)
         
-        # Créer le JSON de la release
-        echo '{' > release_data.json
-        echo '  "tag_name": "v$NEW_VERSION",' >> release_data.json
-        echo '  "name": "Release v$NEW_VERSION",' >> release_data.json
-        echo '  "body": '$(echo "$RELEASE_BODY" | jq -R -s .)',' >> release_data.json
-        echo '  "draft": true,' >> release_data.json
-        echo '  "prerelease": false' >> release_data.json
-        echo '}' >> release_data.json
+        # Create release JSON with variables replaced
+        echo "{\"tag_name\":\"v$NEW_VERSION\",\"name\":\"Release v$NEW_VERSION\",\"body\":$(echo "$RELEASE_BODY" | jq -R -s .),\"draft\":true,\"prerelease\":false}" > release_data.json
         
         echo "Release data:"
         cat release_data.json
@@ -227,15 +221,15 @@ jobs:
         
         echo "Release creation response: $RELEASE_RESPONSE"
         
-        # Vérifier si la création a réussi
+        # Check if creation was successful
         RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
         if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
-          echo "❌ Erreur lors de la création de la release"
+          echo "❌ Error creating release"
           echo "Response: $RELEASE_RESPONSE"
           exit 1
         fi
         
-        echo "✅ Release draft créée avec succès, ID: $RELEASE_ID"
+        echo "✅ Release draft created successfully, ID: $RELEASE_ID"
         echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
     
     - name: Upload Release Assets
@@ -243,12 +237,12 @@ jobs:
         RELEASE_ID="${{ steps.create_release.outputs.release_id }}"
         UPLOAD_URL="https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets"
         
-        echo "📤 Upload des fichiers de build..."
+        echo "📤 Uploading build files..."
         
-        # Upload des fichiers principaux
+        # Upload main files
         for file in index.mjs index.cjs index.d.ts index.umd.js; do
           if [ -f "./dist/$file" ]; then
-            echo "📤 Upload de $file..."
+            echo "📤 Uploading $file..."
             curl -s -X POST \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github.v3+json" \
@@ -258,17 +252,17 @@ jobs:
           fi
         done
         
-        echo "✅ Assets uploadés avec succès"
+        echo "✅ Assets uploaded successfully"
     
     - name: Success message
       run: |
         NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
         RELEASE_ID="${{ steps.create_release.outputs.release_id }}"
-        echo "🎉 Release draft v$NEW_VERSION créé avec succès !"
-        echo "📦 Assets uploadés"
+        echo "🎉 Release draft v$NEW_VERSION created successfully!"
+        echo "📦 Assets uploaded"
         echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/v$NEW_VERSION"
         echo ""
-        echo "📋 Prochaines étapes:"
-        echo "1. Vérifiez la release draft sur GitHub"
-        echo "2. Si tout est OK, publiez la release"
-        echo "3. Le workflow 'Publish to npm' se déclenchera automatiquement"
+        echo "📋 Next steps:"
+        echo "1. Review the release draft on GitHub"
+        echo "2. If everything looks good, publish the release"
+        echo "3. The 'Publish to npm' workflow will trigger automatically"

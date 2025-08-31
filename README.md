@@ -2,7 +2,7 @@
 
 **Ultra-optimized class name utility for CSS Modules**
 
-[![npm version](https://badge.fury.io/js/classigo.svg)](https://badge.fury.io/js/classigo)
+[![npm version](https://img.shields.io/npm/v/classigo.svg)](https://www.npmjs.com/package/classigo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bundle Size](https://img.shields.io/badge/bundle%20size-159B-brightgreen)](https://bundlephobia.com/package/classigo)
 
