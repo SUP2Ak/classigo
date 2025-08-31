@@ -10,6 +10,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
     
     steps:
     - name: Checkout code
@@ -28,6 +29,8 @@ jobs:
       run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
         npm config set access public
+        npm config set scope ""
+        echo "✅ npm configured successfully"
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
