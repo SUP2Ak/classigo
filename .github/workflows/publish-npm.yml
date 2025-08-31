@@ -27,9 +27,18 @@ jobs:
     
     - name: Configure npm
       run: |
+        # Create .npmrc file with token
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-        npm config set access public
-        npm config set scope ""
+        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+        echo "access=public" >> ~/.npmrc
+        
+        # Test connection
+        npm whoami || {
+          echo "❌ Error: npm authentication failed"
+          echo "Token format: ${{ secrets.NPM_TOKEN }}"
+          exit 1
+        }
+        
         echo "✅ npm configured successfully"
     
     - name: Install pnpm
@@ -56,9 +65,9 @@ jobs:
     - name: Extract version from release
       id: version
       run: |
-        # Extraire la version du tag de la release
+        # Extract version from release tag
         RELEASE_TAG="${{ github.event.release.tag_name }}"
-        VERSION=${RELEASE_TAG#v}  # Enlève le 'v' du début
+        VERSION=${RELEASE_TAG#v}  # Remove 'v' prefix
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Release version: $VERSION"
     
@@ -177,8 +186,8 @@ jobs:
     - name: Success message
       run: |
         VERSION="${{ steps.version.outputs.version }}"
-        echo "🎉 Publication v$VERSION réussie !"
-        echo "📦 Package publié sur npm"
-        echo "📝 package.json mis à jour dans main"
+        echo "🎉 Publication v$VERSION successful!"
+        echo "📦 Package published on npm"
+        echo "📝 package.json updated in main"
         echo "🔗 Release: ${{ github.event.release.html_url }}"
         echo "📦 npm: https://www.npmjs.com/package/classigo"
