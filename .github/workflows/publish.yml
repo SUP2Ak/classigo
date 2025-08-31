@@ -136,7 +136,21 @@ jobs:
           git push origin ":refs/tags/v$NEW_VERSION" || true
         fi
         
-        # Create tag
+        # Create a temporary branch for the tag
+        git checkout -b temp-release-branch
+        
+        # Update package.json version only on this branch
+        node -e "
+          const pkg = require('./package.json');
+          pkg.version = '$NEW_VERSION';
+          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+        "
+        
+        # Commit the version change
+        git add package.json
+        git commit -m "Bump version to $NEW_VERSION [skip ci]"
+        
+        # Create tag from this branch
         git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
         
         # Push tag
@@ -146,6 +160,10 @@ jobs:
           git tag -l
           exit 1
         }
+        
+        # Clean up temporary branch
+        git checkout main
+        git branch -D temp-release-branch
         
         echo "✅ Tag created and pushed successfully"
     
