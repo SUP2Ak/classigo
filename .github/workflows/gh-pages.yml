@@ -108,7 +108,7 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to deploy"
         else
-          git commit -m "feat: update GitHub Pages [skip ci]"
+          git commit -m "feat: update GitHub Pages"
           git push origin gh-pages
           echo "✅ Deployed to gh-pages branch"
         fi
