@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly --outDir dist && node scripts/generate-cjs-types.js",
-    "build:prod": "node scripts/clean-dist.js && vite build --config vite.config.prod.js && tsc --emitDeclarationOnly --outDir dist",
+    "build:prod": "node scripts/clean-dist.js && vite build --config vite.config.prod.js && tsc --emitDeclarationOnly --outDir dist && node scripts/copy-package-json.js",
     "build:dev": "vite build && tsc --emitDeclarationOnly --outDir dist && node scripts/generate-cjs-types.js",
     "prepublishOnly": "pnpm run build:prod",
     "lint": "eslint src/**/*.ts",
