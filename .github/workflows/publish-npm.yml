@@ -27,15 +27,15 @@ jobs:
     
     - name: Configure npm
       run: |
-        # Use npm login with token (no scope)
-        echo "${{ secrets.NPM_TOKEN }}" | npm login --registry=https://registry.npmjs.org/ --auth-type=legacy || {
-          echo "❌ Error: npm login failed"
-          exit 1
-        }
+        # Create .npmrc file with token
+        echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+        echo "access=public" >> ~/.npmrc
         
         # Test connection
         npm whoami || {
           echo "❌ Error: npm authentication failed"
+          echo "Token starts with: ${NPM_TOKEN:0:10}..."
           exit 1
         }
         
