@@ -49,9 +49,6 @@ jobs:
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
     
-    - name: Install examples dependencies
-      run: cd examples && pnpm install --frozen-lockfile
-    
     - name: Run linter
       run: pnpm run lint
     
@@ -60,6 +57,9 @@ jobs:
     
     - name: Build production
       run: pnpm run build:prod
+    
+    - name: Install examples dependencies
+      run: cd examples && pnpm install --frozen-lockfile
     
     - name: Build examples
       run: pnpm run examples:build
