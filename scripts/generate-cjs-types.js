@@ -1,3 +1,5 @@
+/* global console, process, __dirname, require */
+
 const fs = require('fs');
 const path = require('path');
 
