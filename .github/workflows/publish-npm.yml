@@ -132,9 +132,15 @@ jobs:
           exit 1
         }
         
-        # Pull latest changes
-        git pull origin main || {
-          echo "❌ Error: Could not pull latest changes"
+        # Fetch latest changes without pulling tags
+        git fetch origin main || {
+          echo "❌ Error: Could not fetch latest changes"
+          exit 1
+        }
+        
+        # Reset to origin/main to get latest changes
+        git reset --hard origin/main || {
+          echo "❌ Error: Could not reset to origin/main"
           exit 1
         }
         
