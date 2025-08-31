@@ -25,34 +25,6 @@ jobs:
         node-version: '20'
         registry-url: 'https://registry.npmjs.org'
     
-    - name: Configure npm
-      run: |
-        # Debug: check if token is available
-        if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
-          echo "❌ Error: NPM_TOKEN is empty or not available"
-          echo "Available secrets:"
-          env | grep -i npm || echo "No NPM secrets found"
-          exit 1
-        fi
-        
-        # Set environment variable explicitly
-        export NPM_TOKEN="${{ secrets.NPM_TOKEN }}"
-        echo "Token length: ${#NPM_TOKEN}"
-        echo "Token starts with: ${NPM_TOKEN:0:10}..."
-        
-        # Create .npmrc file with token
-        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
-        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
-        echo "access=public" >> ~/.npmrc
-        
-        # Test connection
-        npm whoami || {
-          echo "❌ Error: npm authentication failed"
-          exit 1
-        }
-        
-        echo "✅ npm configured successfully"
-    
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
@@ -105,47 +77,15 @@ jobs:
         echo "✅ Version updated successfully: $UPDATED_VERSION"
     
     - name: Build project
-      run: |
-        pnpm run build:prod
-        
-        # Check if build files exist
-        if [ ! -f "./dist/index.mjs" ] || [ ! -f "./dist/index.cjs" ] || [ ! -f "./dist/index.d.ts" ]; then
-          echo "❌ Error: Build files were not created"
-          echo "Dist folder content:"
-          ls -la ./dist/ || echo "Dist folder does not exist"
-          exit 1
-        fi
-        echo "✅ Build successful, files created:"
-        ls -la ./dist/
+      run: pnpm run build:prod
     
     - name: Run tests
-      run: |
-        pnpm run test:run
-        
-        if [ $? -ne 0 ]; then
-          echo "❌ Error: Tests failed"
-          exit 1
-        fi
-        echo "✅ Tests passed"
+      run: pnpm run test:run
     
     - name: Publish to npm
-      run: |
-        echo "📦 Publishing to npm..."
-        
-        # Check if connected to npm
-        npm whoami || {
-          echo "❌ Error: Not connected to npm"
-          echo "Please configure NPM_TOKEN in GitHub secrets"
-          exit 1
-        }
-        
-        # Publish package
-        npm publish --access public || {
-          echo "❌ Error publishing to npm"
-          exit 1
-        }
-        
-        echo "✅ npm publication successful"
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
     - name: Update main branch with new version
       run: |
