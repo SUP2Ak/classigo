@@ -2,6 +2,8 @@
 src/
 scripts/
 bench/
+examples/
+docs/
 
 # Development files
 vite.config.js
@@ -25,6 +27,7 @@ yarn.lock
 .idea/
 *.swp
 *.swo
+.github/
 
 # OS files
 .DS_Store

@@ -4,9 +4,7 @@
 
 [![npm version](https://badge.fury.io/js/classigo.svg)](https://badge.fury.io/js/classigo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/SUP2Ak/classigo/workflows/CI/badge.svg)](https://github.com/SUP2Ak/classigo/actions)
-[![Coverage](https://codecov.io/gh/SUP2Ak/classigo/branch/main/graph/badge.svg)](https://codecov.io/gh/SUP2Ak/classigo)
-[![Bundle Size](https://img.shields.io/bundlephobia/min/classigo)](https://bundlephobia.com/package/classigo)
+[![Bundle Size](https://img.shields.io/badge/bundle%20size-159B-brightgreen)](https://bundlephobia.com/package/classigo)
 
 ## 🚀 Features
 
@@ -101,9 +99,11 @@ For more information, see [docs/README.md](./docs/README.md).
 
 ## 🎮 Live Examples
 
-- **[All Examples](https://sup2ak.github.io/classigo/examples/)** - Interactive demos showcase
-- **[React Demo](https://sup2ak.github.io/classigo/examples/react-demo/)** - Interactive button component with CSS Modules
-- **[Vanilla JS Demo](https://sup2ak.github.io/classigo/examples/vanilla-demo/)** - Pure JavaScript implementation
+- **[All Examples](https://sup2ak.github.io/classigo/)** - Interactive demos showcase
+- **[React Demo](https://sup2ak.github.io/classigo/react-demo/)** - Interactive button component with CSS Modules
+- **[Vue Demo](https://sup2ak.github.io/classigo/vue-demo/)** - Vue 3 component with Composition API
+- **[Svelte Demo](https://sup2ak.github.io/classigo/svelte-demo/)** - Svelte component with reactivity
+- **[Vanilla JS Demo](https://sup2ak.github.io/classigo/vanilla-demo/)** - Pure JavaScript implementation
 
 *Examples show real-time className generation and performance comparisons*
 
