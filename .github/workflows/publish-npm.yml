@@ -7,7 +7,6 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: classigo-github-actions
     permissions:
       contents: write
       packages: write
@@ -28,6 +27,14 @@ jobs:
     
     - name: Configure npm
       run: |
+        # Debug: check if token is available
+        if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+          echo "❌ Error: NPM_TOKEN is empty or not available"
+          echo "Available secrets:"
+          env | grep -i npm || echo "No NPM secrets found"
+          exit 1
+        fi
+        
         # Create .npmrc file with token
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
         echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
@@ -36,6 +43,7 @@ jobs:
         # Test connection
         npm whoami || {
           echo "❌ Error: npm authentication failed"
+          echo "Token length: ${#NPM_TOKEN}"
           echo "Token starts with: ${NPM_TOKEN:0:10}..."
           exit 1
         }
