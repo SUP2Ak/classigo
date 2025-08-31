@@ -63,7 +63,7 @@ jobs:
         run: pnpm run build:prod
       
       - name: Install examples dependencies
-        run: cd examples && pnpm install --frozen-lockfile
+        run: cd examples && pnpm install --no-frozen-lockfile
       
       - name: Build examples
         run: pnpm run examples:build
