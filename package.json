@@ -33,7 +33,7 @@
     "examples:build": "cd examples && pnpm run build",
     "examples:preview": "cd examples && pnpm run preview",
     "examples:deploy": "cd examples && pnpm run deploy",
-    "setup-gh-pages": "mkdir -p gh-pages && cp -r examples/dist/* gh-pages/ && cp dist/classigo.umd.js gh-pages/"
+    "setup-gh-pages": "mkdir -p gh-pages && cp -r examples/dist/* gh-pages/ && cp dist/index.umd.js gh-pages/classigo.umd.js"
   },
   "keywords": [
     "classigo",

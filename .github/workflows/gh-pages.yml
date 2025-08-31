@@ -73,7 +73,7 @@ jobs:
         cp -r examples/dist/* gh-pages/
         
         # Copy classigo UMD build for examples
-        cp dist/classigo.umd.js gh-pages/
+        cp dist/index.umd.js gh-pages/classigo.umd.js
     
     - name: Deploy to gh-pages branch
       run: |
