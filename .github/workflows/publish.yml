@@ -1,0 +1,398 @@
+name: Create Release & Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type de release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+      draft:
+        description: 'Créer en mode draft'
+        required: true
+        default: true
+        type: boolean
+      prerelease:
+        description: 'Marquer comme prerelease'
+        required: false
+        default: false
+        type: boolean
+      publish_npm:
+        description: 'Publier sur npm'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      actions: write
+      issues: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: latest
+    
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+    
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Read current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Calculate new version
+      id: new_version
+      run: |
+        CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+        RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+        
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR="${VERSION_PARTS[0]}"
+        MINOR="${VERSION_PARTS[1]}"
+        PATCH="${VERSION_PARTS[2]}"
+        
+        case $RELEASE_TYPE in
+          "major")
+            NEW_MAJOR=$((MAJOR + 1))
+            NEW_VERSION="${NEW_MAJOR}.0.0"
+            ;;
+          "minor")
+            NEW_MINOR=$((MINOR + 1))
+            NEW_VERSION="${MAJOR}.${NEW_MINOR}.0"
+            ;;
+          "patch")
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+            ;;
+        esac
+        
+        # Vérifier si la version existe déjà
+        if git tag -l | grep -q "v$NEW_VERSION"; then
+          echo "❌ Erreur: La version v$NEW_VERSION existe déjà"
+          echo "Tags existants:"
+          git tag -l | grep "v$NEW_VERSION" || echo "Aucun tag trouvé"
+          exit 1
+        fi
+        
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+    
+    - name: Backup original files
+      id: backup
+      run: |
+        # Sauvegarder les fichiers originaux
+        cp package.json package.json.backup
+        echo "✅ Fichiers sauvegardés"
+    
+    - name: Update package.json version
+      id: update_version
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        node -e "
+          const pkg = require('./package.json');
+          pkg.version = '$NEW_VERSION';
+          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+        "
+        echo "Updated package.json to version $NEW_VERSION"
+    
+    - name: Build project
+      run: |
+        pnpm run build:prod
+        
+        # Vérifier que les fichiers de build existent
+        if [ ! -f "./dist/index.mjs" ] || [ ! -f "./dist/index.cjs" ] || [ ! -f "./dist/index.d.ts" ]; then
+          echo "❌ Erreur: Les fichiers de build n'ont pas été créés"
+          echo "Contenu du dossier dist:"
+          ls -la ./dist/ || echo "Dossier dist n'existe pas"
+          exit 1
+        fi
+        echo "✅ Build réussi, fichiers créés:"
+        ls -la ./dist/
+    
+    - name: Run tests
+      run: |
+        pnpm run test:run
+        
+        if [ $? -ne 0 ]; then
+          echo "❌ Erreur: Les tests ont échoué"
+          exit 1
+        fi
+        echo "✅ Tests réussis"
+    
+    - name: Create tag
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        # Configuration Git
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Vérifier le statut Git
+        echo "Status Git avant commit:"
+        git status
+        
+        # Ajouter les fichiers
+        git add package.json
+        
+        # Vérifier ce qui va être commité
+        echo "Fichiers à commiter:"
+        git diff --cached
+        
+        # Commit
+        git commit -m "Bump version to $NEW_VERSION"
+        
+        # Vérifier si le tag existe déjà
+        if git tag -l | grep -q "v$NEW_VERSION"; then
+          echo "⚠️  Le tag v$NEW_VERSION existe déjà, suppression..."
+          git tag -d "v$NEW_VERSION" || true
+          git push origin ":refs/tags/v$NEW_VERSION" || true
+        fi
+        
+        # Créer le tag
+        git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+        
+        # Push avec gestion d'erreur
+        echo "Pushing to main..."
+        git push origin main || {
+          echo "❌ Erreur lors du push vers main"
+          git remote -v
+          git branch -a
+          exit 1
+        }
+        
+        echo "Pushing tag..."
+        git push origin "v$NEW_VERSION" || {
+          echo "❌ Erreur lors du push du tag"
+          git tag -l
+          exit 1
+        }
+        
+        echo "✅ Push réussi"
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s" --reverse)
+        fi
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        echo "## Changelog" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### v$NEW_VERSION" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "$CHANGELOG" >> CHANGELOG.md
+    
+    - name: Create Release
+      id: create_release
+      run: |
+        # Créer la release via l'API GitHub directement
+        echo "## 🚀 Release v${{ steps.new_version.outputs.new_version }}" > release_body.txt
+        echo "" >> release_body.txt
+        echo "### 📋 Changelog" >> release_body.txt
+        echo "${{ steps.changelog.outputs.changelog }}" >> release_body.txt
+        echo "" >> release_body.txt
+        echo "### 📦 Installation" >> release_body.txt
+        echo '```bash' >> release_body.txt
+        echo 'npm install classigo' >> release_body.txt
+        echo '```' >> release_body.txt
+        echo "" >> release_body.txt
+        echo '```bash' >> release_body.txt
+        echo 'pnpm add classigo' >> release_body.txt
+        echo '```' >> release_body.txt
+        echo "" >> release_body.txt
+        echo '```bash' >> release_body.txt
+        echo 'yarn add classigo' >> release_body.txt
+        echo '```' >> release_body.txt
+        echo "" >> release_body.txt
+        echo "### 🔧 Utilisation" >> release_body.txt
+        echo '```javascript' >> release_body.txt
+        echo 'import { classigo } from "classigo";' >> release_body.txt
+        echo '' >> release_body.txt
+        echo '// Utilisation basique' >> release_body.txt
+        echo 'const className = classigo("base", { active: true, disabled: false });' >> release_body.txt
+        echo '// Résultat: "base active"' >> release_body.txt
+        echo '```' >> release_body.txt
+        echo "" >> release_body.txt
+        echo "### 📝 Notes" >> release_body.txt
+        echo "- Version automatiquement générée depuis package.json" >> release_body.txt
+        echo "- Build testé et validé" >> release_body.txt
+        echo "- Tests exécutés avec succès" >> release_body.txt
+        echo "- Release créée en mode draft pour validation" >> release_body.txt
+        
+        RELEASE_BODY=$(cat release_body.txt)
+        
+        # Créer le JSON de la release
+        echo '{' > release_data.json
+        echo '  "tag_name": "v${{ steps.new_version.outputs.new_version }}",' >> release_data.json
+        echo '  "name": "Release v${{ steps.new_version.outputs.new_version }}",' >> release_data.json
+        echo '  "body": '$(echo "$RELEASE_BODY" | jq -R -s .)',' >> release_data.json
+        echo '  "draft": ${{ github.event.inputs.draft }},' >> release_data.json
+        echo '  "prerelease": ${{ github.event.inputs.prerelease }}' >> release_data.json
+        echo '}' >> release_data.json
+        
+        echo "Release data:"
+        cat release_data.json
+        
+        RELEASE_RESPONSE=$(curl -s -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          "https://api.github.com/repos/${{ github.repository }}/releases" \
+          -d @release_data.json)
+        
+        echo "Release creation response: $RELEASE_RESPONSE"
+        
+        # Vérifier si la création a réussi
+        RELEASE_ID=$(echo "$RELEASE_RESPONSE" | jq -r '.id')
+        if [ "$RELEASE_ID" = "null" ] || [ -z "$RELEASE_ID" ]; then
+          echo "❌ Erreur lors de la création de la release"
+          echo "Response: $RELEASE_RESPONSE"
+          exit 1
+        fi
+        
+        echo "✅ Release créée avec succès, ID: $RELEASE_ID"
+        echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+    
+    - name: Upload Release Assets
+      run: |
+        RELEASE_ID="${{ steps.create_release.outputs.release_id }}"
+        UPLOAD_URL="https://uploads.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets"
+        
+        echo "📤 Upload des fichiers de build..."
+        
+        # Upload des fichiers principaux
+        for file in index.mjs index.cjs index.d.ts index.umd.js; do
+          if [ -f "./dist/$file" ]; then
+            echo "📤 Upload de $file..."
+            curl -s -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @./dist/$file \
+              "$UPLOAD_URL?name=$file"
+          fi
+        done
+        
+        echo "✅ Assets uploadés avec succès"
+    
+    - name: Publish to npm
+      if: github.event.inputs.publish_npm == 'true'
+      run: |
+        echo "📦 Publication sur npm..."
+        npm publish --access public
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Publication npm réussie"
+        else
+          echo "❌ Erreur lors de la publication npm"
+          exit 1
+        fi
+    
+    - name: Success message
+      run: |
+        echo "🎉 Release v${{ steps.new_version.outputs.new_version }} créé avec succès !"
+        echo "📦 Assets uploadés"
+        if [ "${{ github.event.inputs.publish_npm }}" = "true" ]; then
+          echo "📦 Package publié sur npm"
+        fi
+        echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.new_version.outputs.new_version }}"
+    
+    - name: Cleanup backup files
+      if: success()
+      run: |
+        # Nettoyer les fichiers de sauvegarde en cas de succès
+        rm -f package.json.backup
+        echo "✅ Fichiers de sauvegarde supprimés"
+    
+    - name: Rollback on failure
+      if: failure()
+      run: |
+        echo "❌ Échec détecté, rollback en cours..."
+        
+        # Configuration Git pour le rollback
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+        
+        # 1. Supprimer le tag remote s'il existe
+        echo "🗑️  Suppression du tag remote v$NEW_VERSION..."
+        git push origin ":refs/tags/v$NEW_VERSION" || echo "Tag remote déjà supprimé ou inexistant"
+        
+        # 2. Supprimer le tag local s'il existe
+        if git tag -l | grep -q "v$NEW_VERSION"; then
+          echo "🗑️  Suppression du tag local v$NEW_VERSION..."
+          git tag -d "v$NEW_VERSION" || true
+        fi
+        
+        # 3. Annuler le commit de version s'il a été fait
+        if git log --oneline -1 | grep -q "Bump version to"; then
+          echo "🔄 Annulation du commit de version..."
+          git reset --hard HEAD~1 || true
+          
+          # 4. Forcer le push pour annuler le commit remote
+          echo "🔄 Force push pour annuler le commit remote..."
+          git push --force-with-lease origin main || {
+            echo "⚠️  Force push échoué, tentative de push simple..."
+            git push origin main || echo "Push échoué, commit remote non annulé"
+          }
+        fi
+        
+        # 5. Restaurer les fichiers originaux
+        if [ -f "package.json.backup" ]; then
+          cp package.json.backup package.json
+          echo "✅ package.json restauré"
+        fi
+        
+        # 6. Supprimer les fichiers de sauvegarde
+        rm -f package.json.backup
+        
+        echo "🔄 Rollback terminé - fichiers et Git restaurés à leur état original"
+        echo "⚠️  Si le commit/tag existe encore sur GitHub, supprimez-les manuellement"
