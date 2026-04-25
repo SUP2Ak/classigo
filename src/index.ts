@@ -1,54 +1,40 @@
-
-
-/**
- * Appends a class to an existing class string
- * @param value - The existing class string
- * @param newClass - The new class to append
- * @returns The combined class string
- */
-function appendClass(value: string, newClass: string): string {
-  return !newClass ? value : value ? (value + ' ' + newClass) : newClass;
-}
+import type { ClassObject, ClassValue } from "./types.ts";
 
 /**
- * Ultra-optimized class name utility for CSS Modules
- *
  * Combines class names efficiently, filtering out falsy values.
- * Perfect for conditional classes and CSS Modules integration.
- *
- * @param classes - Variable number of class names or falsy values
- * @returns Combined class names separated by spaces
+ * Accepts strings, falsy values, and objects (`{ [className]: boolean }`).
  *
  * @example
- * ```typescript
- * // Basic usage
- * classigo('button', 'button--primary', 'button--large')
- * // → "button button--primary button--large"
+ * ```ts
+ * // Strings
+ * classigo("btn", "btn--primary", isLarge && "btn--lg")
+ * // → "btn btn--primary btn--lg"
  *
- * // With conditions (prefer && over ternary)
- * classigo('button', 'button--primary', isLarge && 'button--large')
- * // → "button button--primary" (if isLarge is false)
- * // → "button button--primary button--large" (if isLarge is true)
+ * // Objects
+ * classigo("btn", { "btn--active": isActive, "btn--disabled": !isEnabled })
+ * // → "btn btn--active"
  *
- * // With template literals
- * classigo('button', `button--${variant}`, isLarge && 'button--large')
- * // → "button button--primary button--large" (if variant = 'primary')
- *
- * // With CSS Modules
- * classigo(styles.button, styles['button--primary'], isLarge && styles['button--large'])
+ * // Mixed
+ * classigo("btn", isLarge && "btn--lg", { "btn--active": isActive })
+ * // → "btn btn--lg btn--active"
  * ```
- * 
- * @tip Use `&&` instead of ternary operators for better performance
- * @tip Template literals work perfectly with classigo
  */
-function classigo(...classes: (string | undefined | null | false)[]): string {
-  let result = '';
-
+export function classigo(...classes: ClassValue[]): string {
+  let result = "";
   for (let i = 0; i < classes.length; i++) {
     const cls = classes[i];
-    result = cls ? appendClass(result, cls) : result;
+    if (!cls) continue;
+    if (typeof cls !== "string") {
+      for (const key in cls as ClassObject) {
+        if ((cls as ClassObject)[key])
+          result = result ? result + " " + key : key;
+      }
+      continue;
+    }
+    result = result ? result + " " + cls : cls;
   }
   return result;
 }
 
 export default classigo;
+export type { ClassValue, ClassObject } from "./types.ts";

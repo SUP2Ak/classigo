@@ -9,137 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
-      id-token: write
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        registry-url: 'https://registry.npmjs.org'
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: latest
-    
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-    
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-    
-    - name: Extract version from release
-      id: version
-      run: |
-        # Extract version from release tag
-        RELEASE_TAG="${{ github.event.release.tag_name }}"
-        VERSION=${RELEASE_TAG#v}  # Remove 'v' prefix
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "Release version: $VERSION"
-    
-    - name: Update package.json version
-      run: |
-        VERSION="${{ steps.version.outputs.version }}"
-        
-        # Update version in package.json
-        node -e "
-          const pkg = require('./package.json');
-          pkg.version = '$VERSION';
-          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-        "
-        echo "Updated package.json to version $VERSION"
-        
-        # Verify the update worked
-        UPDATED_VERSION=$(node -p "require('./package.json').version")
-        if [ "$UPDATED_VERSION" != "$VERSION" ]; then
-          echo "❌ Error: Version was not updated correctly"
-          echo "Expected: $VERSION, Got: $UPDATED_VERSION"
-          exit 1
-        fi
-        echo "✅ Version updated successfully: $UPDATED_VERSION"
-    
-    - name: Build project
-      run: pnpm run build:prod
-    
-    - name: Run tests
-      run: pnpm run test:run
-    
-    - name: Publish to npm
-      run: npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    
-    - name: Update main branch with new version
-      run: |
-        VERSION="${{ steps.version.outputs.version }}"
-        
-        # Git configuration
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        
-        # Checkout main branch
-        git checkout main || {
-          echo "❌ Error: Could not checkout main branch"
-          exit 1
-        }
-        
-        # Fetch latest changes without pulling tags
-        git fetch origin main || {
-          echo "❌ Error: Could not fetch latest changes"
-          exit 1
-        }
-        
-        # Reset to origin/main to get latest changes
-        git reset --hard origin/main || {
-          echo "❌ Error: Could not reset to origin/main"
-          exit 1
-        }
-        
-        # Update package.json version
-        node -e "
-          const pkg = require('./package.json');
-          pkg.version = '$VERSION';
-          require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-        "
-        
-        # Add and commit changes
-        git add package.json
-        git commit -m "Bump version to $VERSION [skip ci]" || {
-          echo "❌ Error: Could not commit changes"
-          exit 1
-        }
-        
-        # Push to main
-        git push origin main || {
-          echo "❌ Error: Could not push to main"
-          exit 1
-        }
-        
-        echo "✅ package.json updated on main branch"
-    
-    - name: Success message
-      run: |
-        VERSION="${{ steps.version.outputs.version }}"
-        echo "🎉 Publication v$VERSION successful!"
-        echo "📦 Package published on npm"
-        echo "📝 package.json updated in main"
-        echo "🔗 Release: ${{ github.event.release.html_url }}"
-        echo "📦 npm: https://www.npmjs.com/package/classigo"
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+      - run: bun run build
+      - name: Sync version from release tag
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          node -e "
+            const pkg = require('./package.json');
+            pkg.version = '$VERSION';
+            require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
