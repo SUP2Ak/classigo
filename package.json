@@ -31,6 +31,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./lite": {
+      "types": "./dist/lite.d.ts",
+      "import": "./dist/lite.js"
     }
   },
   "files": [
@@ -40,7 +44,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && bun build src/index.ts src/lite.ts --outdir dist --format esm --minify",
     "test": "bun test tests/",
     "bench": "bun run bench/bench.ts",
     "typecheck": "tsc --noEmit",
@@ -49,6 +53,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "classigo-v1": "npm:classigo@1.0.1",
     "classnames": "latest",
     "clsx": "latest",
     "mitata": "latest",
