@@ -24,14 +24,13 @@ export function classigo(...classes: ClassValue[]): string {
   for (let i = 0; i < classes.length; i++) {
     const cls = classes[i];
     if (!cls) continue;
-    if (typeof cls === "string") {
-      result = result ? result + " " + cls : cls;
+    if (typeof cls !== "string") {
+      for (const key in cls as ClassObject) {
+        if ((cls as ClassObject)[key]) result = result ? result + " " + key : key;
+      }
       continue;
     }
-    const obj = cls as ClassObject;
-    for (const key in obj) {
-      if (obj[key]) result = result ? result + " " + key : key;
-    }
+    result = result ? result + " " + cls : cls;
   }
   return result;
 }
