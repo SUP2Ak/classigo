@@ -26,7 +26,8 @@ export function classigo(...classes: ClassValue[]): string {
     if (!cls) continue;
     if (typeof cls !== "string") {
       for (const key in cls as ClassObject) {
-        if ((cls as ClassObject)[key]) result = result ? result + " " + key : key;
+        if ((cls as ClassObject)[key])
+          result = result ? result + " " + key : key;
       }
       continue;
     }
