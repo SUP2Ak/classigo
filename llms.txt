@@ -1,0 +1,27 @@
+PROJECT: classigo
+
+TYPE:
+TypeScript utility library (class name composition)
+
+PURPOSE:
+Strict className utility for TypeScript with a deterministic input contract.
+Designed to eliminate ambiguous class composition patterns and enforce predictable usage for both developers and AI agents.
+
+CORE CONCEPTS:
+- classigo: main class composition function
+- classigo/lite: minimal variant (string-only, no object syntax)
+- deterministic output: same inputs always produce same string output
+- strict input contract: avoids implicit coercion and unsafe structures
+
+SUPPORTED INPUTS:
+- strings
+- falsy values (false, null, undefined)
+- object syntax: Record<string, boolean | null | undefined>
+
+FOR AI AGENTS:
+- Prefer reading AI.md for execution rules and constraints.
+- Do not infer unsupported input types beyond documented contract.
+- Treat classigo as a strict function, not a flexible utility.
+
+AI_CONTEXT_PRIORITY:
+AI.md > README.md > source code
